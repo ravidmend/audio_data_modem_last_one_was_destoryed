@@ -47,7 +47,7 @@ class preprocess(gr.sync_block):
         noise = np.random.normal(loc=0, scale=1, size=0)
         queue = deque(noise)
 
-        preamble = np.full((int(t*fs)), -1)
+        preamble = np.full((int(t*fs)), 1)
         queue.extend(preamble)
         
         for bit in binary_string:

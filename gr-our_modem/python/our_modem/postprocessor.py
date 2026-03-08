@@ -21,12 +21,13 @@ class postprocessor(gr.sync_block):
         self.t = t
         self.fs = fs
         self.sensitivity = sensitivity
-        self.timeout = timeout
+        self.timeout = timeout*8 # convert bytes to bits
         self.bits = []
         self.queue = deque([])
         self.did_removed_preamble = False
 
         self.detection_mode=True
+        self.undetected_bits=0
 
 
         self.stream_count=0
@@ -37,37 +38,34 @@ class postprocessor(gr.sync_block):
             in_sig=[np.float32, ],
             out_sig=None)
 
+    def __del__(self):
+        datanp=np.concatenate(self.data)
+        np.save('data.npy', datanp)
+
 
     def work(self, input_items, output_items):
     
-        
+        self.stream_count+=1
         in0 = input_items[0]
         
-
-        self.stream_count+=1
-        if self.stream_count<=10:
-            self.data.append(in0.copy())
+        self.data.append(in0.copy())
             
-        else:
-            datanp=np.concatenate(self.data)
-            np.save('data.npy', datanp)
-
-        print('max',max(in0))
-        print('min',min(in0))
 
 
         sps = int(self.t*self.fs)
 
+        window = np.full((sps), 1)
+
+        
+
         if (self.detection_mode==True):
-            window = np.full((sps), -1)
+            
             correlation = np.correlate(in0, window, mode='full')
-            #print(correlation[300:700])
-            peaks,_ = find_peaks(correlation,height = 0.15*sps*1)
-            print('hadar',peaks)
-            print('zvika',correlation[peaks])
+            peaks,_ = find_peaks(correlation,height = self.sensitivity*sps) # 0.07 = 0.1(modulation loss) * factor
+            
          
             if len(peaks) != 0:
-                print(len(in0))
+              
                 starting_index = peaks[0]
                 #np.save("withpreamble.npy", in0)
                 in0 = in0[starting_index:len(in0)]
@@ -76,16 +74,33 @@ class postprocessor(gr.sync_block):
 
                 
 
-        if (self.detection_mode==False):
+        else:
             self.queue.extend(in0)
-
-            while(len(self.queue) > (3 * sps)):
+            bit_time = 3
+            while(len(self.queue) > (bit_time * sps)):
                 
-                dequeued_items = np.array([self.queue.popleft() for _ in range(3 * sps)])
-                bit = self.decide_bit(dequeued_items,sps)
+                dequeued_items = np.array([self.queue.popleft() for _ in range(bit_time * sps)])
+                corr_max = max(np.correlate(dequeued_items, window, 'full'))
+
+                if corr_max<1e-3:
+                    print('noise')
+                    self.undetected_bits = self.undetected_bits +1
+                else:
+                
+                    self.undetected_bits = 0
+
+                if self.timeout == self.undetected_bits:
+                    print('timeout detected')
+                    self.detection_mode=True
+                    self.bits = []
+                    self.undetected_bits = 0
+                    break
+
+
+                bit = self.decide_bit(dequeued_items,sps, bit_time)
                 self.bits.append(bit)
 
-                if (len(self.bits) == 8):
+                if (len(self.bits) == 8): # byte consists of 8 bits
                     output_str = self.bits_to_string(self.bits)
                     print(f"{output_str}")
                     self.bits = []
@@ -95,10 +110,11 @@ class postprocessor(gr.sync_block):
         return len(input_items[0])
     
 
-    def decide_bit(self, samples_array,sps): 
+    def decide_bit(self, samples_array,sps, bit_time): 
         filtered_samples_array = postprocessor.noise_smoothing(samples_array,sps)
         binary_arr = (filtered_samples_array>0).astype(int)
-        if(sum(binary_arr)>(self.sensitivity*sps)):
+
+        if(sum(binary_arr)>(bit_time/2*sps)): # if more than 50 percent is 1 we choose bit 1
             return 1
         else:
             return 0
