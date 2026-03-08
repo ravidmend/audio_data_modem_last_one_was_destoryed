@@ -263,9 +263,9 @@ blocks:
     alias: ''
     comment: ''
     fs: samp_rate
-    sensitivity: '1.5'
+    sensitivity: '0.07'
     t: t
-    timeout: '0'
+    timeout: '1'
   states:
     bus_sink: false
     bus_source: false

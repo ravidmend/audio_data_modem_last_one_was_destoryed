@@ -161,7 +161,7 @@ class audio_to_text(gr.top_block, Qt.QWidget):
 
         self._qtgui_freq_sink_x_0_0_win = sip.wrapinstance(self.qtgui_freq_sink_x_0_0.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_freq_sink_x_0_0_win)
-        self.our_modem_postprocessor_0_0 = our_modem.postprocessor(t, samp_rate, 1.5, 0)
+        self.our_modem_postprocessor_0_0 = our_modem.postprocessor(t, samp_rate, 0.07, 1)
         self.blocks_throttle2_1 = blocks.throttle( gr.sizeof_float*1, samp_rate, True, 0 if "auto" == "auto" else max( int(float(0.1) * samp_rate) if "auto" == "time" else int(0.1), 1) )
         self.blocks_freqshift_cc_0_0 = blocks.rotator_cc(2.0*math.pi*(-12000)/samp_rate)
         self.blocks_float_to_complex_1 = blocks.float_to_complex(1)
