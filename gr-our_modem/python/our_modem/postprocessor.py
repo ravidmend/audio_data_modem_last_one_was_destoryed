@@ -56,8 +56,7 @@ class postprocessor(gr.sync_block):
         if (self.detection_mode==True):
             window = np.full((sps), 1)
             correlation = np.correlate(in0, window, mode='full')
-            #print(max(correlation))
-            peaks,_ = find_peaks(correlation,height = 0.07*sps)
+            peaks,_ = find_peaks(correlation,height = self.sensitivity*sps) # 0.07 = 0.1(modulation loss) * factor
             print('hadar',peaks)
             print('zvika',correlation[peaks])
             print('stream count', self.stream_count)
@@ -94,7 +93,8 @@ class postprocessor(gr.sync_block):
     def decide_bit(self, samples_array,sps): 
         filtered_samples_array = postprocessor.noise_smoothing(samples_array,sps)
         binary_arr = (filtered_samples_array>0).astype(int)
-        if(sum(binary_arr)>(self.sensitivity*sps)):
+        half_bit_time = 1.5
+        if(sum(binary_arr)>(half_bit_time*sps)): # if more than 50 percent is 1 we choose bit 1
             return 1
         else:
             return 0
