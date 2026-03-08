@@ -8,6 +8,7 @@
 
 
 import numpy as np
+import base64
 from gnuradio import gr
 from collections import deque
 
@@ -17,13 +18,28 @@ class preprocess(gr.sync_block):
     """
     def __init__(self, t, fs, input_str):
 
-        self.queue = preprocess.process(input_str, t, fs)
+        file_packet = self.create_file_packet(input_str)
+
+        self.queue = preprocess.process(file_packet, t, fs)
         
         gr.sync_block.__init__(self,
             name="preprocess",
             in_sig=None,
             out_sig=[np.float32, ])
 
+
+    def create_file_packet(self, filepath):
+        # packet structure is: filename length : file name : file content
+        filepath_length = str(len(filepath))
+        filepath_length = filepath_length.zfill(3) # length+suffix can be up to 260 (3 chars)
+        with open(filepath, 'rb') as file:
+            bin_data = file.read()
+            encoded_data = base64.b64encode(bin_data)
+            encoded_file_content = encoded_data.decode('utf-8')
+           
+        packet = filepath_length + filepath + encoded_file_content
+        print(packet)
+        return packet
 
     def work(self, input_items, output_items):
         out = output_items[0] 
@@ -41,14 +57,9 @@ class preprocess(gr.sync_block):
     @staticmethod
     def process(input_str, t, fs):
         binary_string = preprocess.string_to_binary(input_str)
-        
-        noise_duration = 1 # 1 second
-        noise_samples = int(noise_duration * fs)
-        noise = np.random.normal(loc=0, scale=1, size=0)
-        queue = deque(noise)
 
         preamble = np.full((int(t*fs)), 1)
-        queue.extend(preamble)
+        queue = deque(preamble)
         
         for bit in binary_string:
             bit_samples = preprocess.bit_to_samples(bit, t, fs)

@@ -65,13 +65,13 @@ class text_to_audio(gr.top_block, Qt.QWidget):
         ##################################################
         self.t = t = 0.01
         self.samp_rate = samp_rate = 48000
-        self.my_string = my_string = ''.join([f"abc{i}" for i in range(5)])
+        self.my_string = my_string = "Zvika_Hadar.jpg"
 
         ##################################################
         # Blocks
         ##################################################
 
-        self.qtgui_freq_sink_x_0 = qtgui.freq_sink_c(
+        self.qtgui_freq_sink_x_0 = qtgui.freq_sink_f(
             1024, #size
             window.WIN_BLACKMAN_hARRIS, #wintype
             0, #fc
@@ -92,6 +92,7 @@ class text_to_audio(gr.top_block, Qt.QWidget):
         self.qtgui_freq_sink_x_0.set_fft_window_normalized(False)
 
 
+        self.qtgui_freq_sink_x_0.set_plot_pos_half(not True)
 
         labels = ['', '', '', '', '',
             '', '', '', '', '']
@@ -115,7 +116,7 @@ class text_to_audio(gr.top_block, Qt.QWidget):
         self.top_layout.addWidget(self._qtgui_freq_sink_x_0_win)
         self.our_modem_preprocess_0 = our_modem.preprocess(t, samp_rate, my_string)
         self.blocks_wavfile_sink_0 = blocks.wavfile_sink(
-            'abcde_10_audio.wav',
+            'abcde_10_audio_file.wav',
             1,
             samp_rate,
             blocks.FORMAT_WAV,
@@ -139,8 +140,8 @@ class text_to_audio(gr.top_block, Qt.QWidget):
         ##################################################
         self.connect((self.analog_wfm_tx_0, 0), (self.blocks_freqshift_cc_0, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_wavfile_sink_0, 0))
+        self.connect((self.blocks_complex_to_real_0, 0), (self.qtgui_freq_sink_x_0, 0))
         self.connect((self.blocks_freqshift_cc_0, 0), (self.blocks_complex_to_real_0, 0))
-        self.connect((self.blocks_freqshift_cc_0, 0), (self.qtgui_freq_sink_x_0, 0))
         self.connect((self.blocks_throttle2_0, 0), (self.analog_wfm_tx_0, 0))
         self.connect((self.our_modem_preprocess_0, 0), (self.blocks_throttle2_0, 0))
 
