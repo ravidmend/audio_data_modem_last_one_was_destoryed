@@ -37,23 +37,18 @@ class postprocessor(gr.sync_block):
             in_sig=[np.float32, ],
             out_sig=None)
 
+    def __del__(self):
+        datanp=np.concatenate(self.data)
+        np.save('data.npy', datanp)
+
 
     def work(self, input_items, output_items):
     
         
         in0 = input_items[0]
         
-
-        self.stream_count+=1
-        if self.stream_count<=10:
-            self.data.append(in0.copy())
+        self.data.append(in0.copy())
             
-        else:
-            datanp=np.concatenate(self.data)
-            np.save('data.npy', datanp)
-
-        print('max',max(in0))
-        print('min',min(in0))
 
 
         sps = int(self.t*self.fs)
@@ -61,13 +56,13 @@ class postprocessor(gr.sync_block):
         if (self.detection_mode==True):
             window = np.full((sps), -1)
             correlation = np.correlate(in0, window, mode='full')
-            #print(correlation[300:700])
-            peaks,_ = find_peaks(correlation,height = 0.15*sps*1)
-            print('hadar',peaks)
-            print('zvika',correlation[peaks])
+            print(correlation[300:1300])
+            peaks,_ = find_peaks(correlation,height = 0.07*sps)
+            #print('hadar',peaks)
+            #print('zvika',correlation[peaks])
          
             if len(peaks) != 0:
-                print(len(in0))
+              
                 starting_index = peaks[0]
                 #np.save("withpreamble.npy", in0)
                 in0 = in0[starting_index:len(in0)]
