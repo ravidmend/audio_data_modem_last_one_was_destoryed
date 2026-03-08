@@ -8,6 +8,7 @@
 
 
 import numpy as np
+import base64
 from gnuradio import gr
 from scipy.signal import find_peaks
 from collections import deque
@@ -78,7 +79,6 @@ class postprocessor(gr.sync_block):
                 if corr_max<1e-5: # even 1e-7 would work since the correlation of the preamble with either noise, or with zeros(what the modem sends after it finishes), is very low
                     self.undetected_bits = self.undetected_bits +1
                    
-                    print(self.bits)
                 else:
                     self.undetected_bits = 0
 
@@ -87,7 +87,22 @@ class postprocessor(gr.sync_block):
                     if len(self.bits)<7: 
                         self.output_str = self.output_str[:-1]
 
-                    print(f'Message is: {self.output_str}')
+                    try:
+                        filepath_length = int(self.output_str[0:3]) # length+suffix can be up to 260 (3 chars)
+                    except ValueError as _:
+                        # bad packet, continue to next
+                        self.reset()
+                        continue
+                    
+                    filepath = self.output_str[3:3+filepath_length]
+                    encoded_file_content = self.output_str[3+filepath_length:]
+                    encoded_bytes = encoded_file_content.encode('utf-8')
+                    decoded_bytes = base64.b64decode(encoded_bytes)
+                    
+                    with open(f"new_{filepath}", 'wb') as f:
+                        f.write(decoded_bytes)
+
+                    print('File transported succesfully')
 
                     print('Detection mode is on')
 
