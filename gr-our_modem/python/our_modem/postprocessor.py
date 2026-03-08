@@ -44,7 +44,7 @@ class postprocessor(gr.sync_block):
 
     def work(self, input_items, output_items):
     
-        
+        self.stream_count+=1
         in0 = input_items[0]
         
         self.data.append(in0.copy())
@@ -54,12 +54,13 @@ class postprocessor(gr.sync_block):
         sps = int(self.t*self.fs)
 
         if (self.detection_mode==True):
-            window = np.full((sps), -1)
+            window = np.full((sps), 1)
             correlation = np.correlate(in0, window, mode='full')
-            print(correlation[300:1300])
+            #print(max(correlation))
             peaks,_ = find_peaks(correlation,height = 0.07*sps)
-            #print('hadar',peaks)
-            #print('zvika',correlation[peaks])
+            print('hadar',peaks)
+            print('zvika',correlation[peaks])
+            print('stream count', self.stream_count)
          
             if len(peaks) != 0:
               
