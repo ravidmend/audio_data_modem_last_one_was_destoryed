@@ -8,6 +8,7 @@
 
 
 import numpy as np
+import base64
 from gnuradio import gr
 from collections import deque
 
@@ -41,14 +42,9 @@ class preprocess(gr.sync_block):
     @staticmethod
     def process(input_str, t, fs):
         binary_string = preprocess.string_to_binary(input_str)
-        
-        noise_duration = 1 # 1 second
-        noise_samples = int(noise_duration * fs)
-        noise = np.random.normal(loc=0, scale=1, size=0)
-        queue = deque(noise)
 
         preamble = np.full((int(t*fs)), 1)
-        queue.extend(preamble)
+        queue = deque(preamble)
         
         for bit in binary_string:
             bit_samples = preprocess.bit_to_samples(bit, t, fs)
