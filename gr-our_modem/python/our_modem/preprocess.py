@@ -38,7 +38,6 @@ class preprocess(gr.sync_block):
             encoded_file_content = encoded_data.decode('utf-8')
            
         packet = filepath_length + filepath + encoded_file_content
-        print(packet)
         return packet
 
     def work(self, input_items, output_items):

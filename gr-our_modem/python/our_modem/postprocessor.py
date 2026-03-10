@@ -58,7 +58,7 @@ class postprocessor(gr.sync_block):
             
             correlation = np.correlate(in0, window, mode='full')
             peaks,_ = find_peaks(correlation,height = self.sensitivity*sps) # 0.07 = 0.1(modulation loss) * factor
-            
+            print('peaks', peaks)
          
             if len(peaks) != 0:
                 print('Decryption mode is on')
@@ -75,9 +75,10 @@ class postprocessor(gr.sync_block):
                 
                 dequeued_items = np.array([self.queue.popleft() for _ in range(bit_time * sps)])
                 corr_max = max(np.correlate(dequeued_items, window, 'full'))
-
-                if corr_max<1e-5: # even 1e-7 would work since the correlation of the preamble with either noise, or with zeros(what the modem sends after it finishes), is very low
+                print('cor mnax', corr_max)
+                if corr_max<0.5*self.sensitivity*sps: # even 1e-7 would work since the correlation of the preamble with either noise, or with zeros(what the modem sends after it finishes), is very low
                     self.undetected_bits = self.undetected_bits +1
+                    
                    
                 else:
                     self.undetected_bits = 0
@@ -90,6 +91,7 @@ class postprocessor(gr.sync_block):
                     try:
                         filepath_length = int(self.output_str[0:3]) # length+suffix can be up to 260 (3 chars)
                     except ValueError as _:
+                        print("lalalalalalallalalalala")
                         # bad packet, continue to next
                         self.reset()
                         continue
@@ -116,6 +118,7 @@ class postprocessor(gr.sync_block):
 
                 if (len(self.bits) == 8): # byte consists of 8 bits
                     output_char= self.bits_to_string(self.bits)
+                    print("bbbbbbb" , output_char)
                     self.output_str += output_char
                     self.bits = []
     
